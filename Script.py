@@ -51,7 +51,7 @@ loc_csv= loc_arquivos[1]
 df_buildings = pd.read_csv(loc_csv+'buildings.csv',
                            dtype={'street_number':str},na_values="None",sep=',')
 
-# Executa fnncao para criação das tabelas
+# Executa funcao para criação das tabelas
 functions.create_tables()
 
 # Vamos padronizar os registros "state" para sigla dos estados 
@@ -90,7 +90,8 @@ conn = psycopg2.connect(**params)
 cur = conn.cursor()
 # Queries
 # 1ª query -> atualiza o id_building na tabela ADs
-# 2ª query -> insere os registros com mais de um registro buildings encontrado na tabela ads_building
+# 2ª query -> atualiza o od_building restante
+# 3ª query -> insere os registros com mais de um registro buildings encontrado na tabela ads_building
 queries = ('''
 update ADS set id_building = b.id 
 from "buildings" b
@@ -103,7 +104,8 @@ where ads.street = b.address
 '''
 -- atualizando utilizandos as inf de endereço sem "neighborhood"
 -- para esses casos, como podemos encontrar mais de um registro de building para cada ad
--- vamos selecionar somente os registros com 1 building para 1 ad   
+-- vamos selecionar somente os registros com 1 building para 1 ad  
+
 with cte as (select ads.id,count(b.id)as qtd
 from ads , "buildings" b
 where ads.street = b.address  
@@ -114,6 +116,7 @@ where ads.street = b.address
 group by ads.id
 having(count(b.id))= 1 --somente 1 registro por ad
 order by ads.id)
+
 -- Update
 update ads set id_building= b.id
 from buildings b
@@ -148,4 +151,3 @@ cur.close()
 conn.commit()
 if conn is not None:
     conn.close()
-
